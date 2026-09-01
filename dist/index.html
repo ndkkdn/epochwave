@@ -35,14 +35,6 @@ kbd{font:inherit;font-size:.85em;border:1px solid var(--line);border-radius:4px;
   background:
     radial-gradient(120% 80% at 50% 118%, #4A2010 0%, #4A0E28 24%, #240C2C 46%, #0E0A1E 70%, var(--bg) 100%);
 }
-.sun{
-  position:absolute; left:50%; bottom:26%; width:min(56vw,520px); aspect-ratio:1;
-  transform:translateX(-50%); border-radius:50%;
-  background:linear-gradient(180deg,#C9A63E 0%,#B0662A 46%,#8A2148 100%);
-  filter:blur(.4px); opacity:.38;
-  -webkit-mask-image:repeating-linear-gradient(180deg,#000 0 12px,transparent 12px 18px);
-  mask-image:repeating-linear-gradient(180deg,#000 0 12px,transparent 12px 18px);
-}
 .grid-floor{
   position:absolute; left:-50%; right:-50%; bottom:0; height:46%;
   background-image:
@@ -75,7 +67,6 @@ kbd{font:inherit;font-size:.85em;border:1px solid var(--line);border-radius:4px;
 
 #splash.leaving{ animation:splashCollapse .95s cubic-bezier(.6,.02,.86,.1) forwards }
 #splash.leaving .splash-inner{ animation:suckIn .62s cubic-bezier(.66,0,.9,.24) forwards }
-#splash.leaving .sun,
 #splash.leaving .grid-floor{ animation:suckInBg .62s cubic-bezier(.66,0,.9,.24) forwards }
 #splash.leaving .warp{ animation:warpStreak .95s ease-in forwards }
 #splash.leaving .warp-core{ animation:coreFlash .95s ease-in forwards }
@@ -602,7 +593,6 @@ kbd{font:inherit;font-size:.85em;border:1px solid var(--line);border-radius:4px;
 <!-- ══ 스플래시 ══ -->
 <div id="splash">
   <div class="grid-floor" aria-hidden="true"></div>
-  <div class="sun" aria-hidden="true"></div>
   <div class="warp" aria-hidden="true"></div>
   <div class="warp-core" aria-hidden="true"></div>
   <div class="splash-inner">
