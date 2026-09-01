@@ -100,15 +100,17 @@
       }
     }
 
-    /* ── 1955 출발점 마커 (영화의 그 시점) ── */
+    /* ── 1955 출발점 마커 (영화의 그 시점) — 워프의 소실점이 도착하는 자리이기도 하다 ── */
     var bx = X(1955, 11);
     var markY = cy - MKT_BASE - BAND - 18;   // 주가 밴드 위쪽
-    gBg.appendChild(S('path', {
-      d: 'M' + bx + ' ' + markY + 'l7 7-7 7-7-7z', fill: '#FFB03A', opacity: '.9'
-    }));
-    var bt = S('text', { x: bx, y: markY - 8, 'text-anchor': 'middle', class: 'terminus' });
+    var departMark = S('path', {
+      d: 'M' + bx + ' ' + markY + 'l7 7-7 7-7-7z', fill: '#FFB03A', opacity: '.9', class: 'depart-mark'
+    });
+    gBg.appendChild(departMark);
+    var bt = S('text', { x: bx, y: markY - 8, 'text-anchor': 'middle', class: 'terminus depart-mark' });
     bt.textContent = '1955.11 DEPART';
     gBg.appendChild(bt);
+    App.arrivalTarget = { x: bx, y: markY };
 
     /* ── 종점 마커 ── */
     var ex = X(to, 8);

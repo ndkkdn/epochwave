@@ -176,6 +176,29 @@ kbd{font:inherit;font-size:.85em;border:1px solid var(--line);border-radius:4px;
   100% { opacity:1; transform:none; filter:none }
 }
 
+/* 소실점이 여기 도착했다는 신호 — 화면 전체가 잠깐 밝아졌다가,
+   출발 마커(1955.11)와 첫 사건 노드가 한 박자 늦게 밝게 펄스한다 */
+.arrival-flash{
+  position:fixed; inset:0; z-index:50; pointer-events:none;
+  background:radial-gradient(circle at 50% 40%, rgba(255,255,255,.9), rgba(255,214,150,.38) 26%, transparent 62%);
+  animation:arrivalFlash .7s ease-out forwards;
+}
+@keyframes arrivalFlash{ 0%{opacity:1} 100%{opacity:0} }
+
+.depart-mark.is-arrival{ animation:departArrival 1.5s ease-out .15s both }
+@keyframes departArrival{
+  0%,15% { filter:drop-shadow(0 0 2px #FFB03A) }
+  40%    { filter:drop-shadow(0 0 18px #FFEBB0) }
+  100%   { filter:drop-shadow(0 0 2px #FFB03A) }
+}
+
+.node.is-arrival .dot{ animation:nodeArrival 1.5s ease-out .15s both }
+@keyframes nodeArrival{
+  0%,15% { box-shadow:0 0 0 5px color-mix(in srgb, var(--c) 9%, transparent), 0 6px 18px rgba(0,0,0,.55) }
+  40%    { box-shadow:0 0 0 20px color-mix(in srgb, var(--c) 28%, transparent), 0 0 44px color-mix(in srgb, var(--c) 85%, transparent) }
+  100%   { box-shadow:0 0 0 5px color-mix(in srgb, var(--c) 9%, transparent), 0 6px 18px rgba(0,0,0,.55) }
+}
+
 .hud{
   flex:0 0 auto; display:flex; align-items:center; gap:18px; padding:11px 18px;
   border-bottom:1px solid var(--line); background:rgba(8,11,20,.72); backdrop-filter:blur(8px); z-index:5;

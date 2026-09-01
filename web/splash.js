@@ -120,5 +120,24 @@ var App = {
 
     App.build(App.data);
     document.getElementById('scroller').focus({ preventScroll: true });
+
+    /* 소실점으로 빨려들어간 빛이 여기, 1955년의 첫 시점에 도착했다는 걸 보여준다 */
+    if (!App.reduced) arrive();
+  }
+
+  function arrive() {
+    var flash = document.createElement('div');
+    flash.className = 'arrival-flash';
+    document.body.appendChild(flash);
+    setTimeout(function () { flash.remove(); }, 700);
+
+    var glow = [].slice.call(document.querySelectorAll('.depart-mark'));
+    var first = App.nodes[0];
+    if (first) glow.push(first.el);
+
+    glow.forEach(function (el) { el.classList.add('is-arrival'); });
+    setTimeout(function () {
+      glow.forEach(function (el) { el.classList.remove('is-arrival'); });
+    }, 1500);
   }
 })();
