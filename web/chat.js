@@ -57,7 +57,7 @@
     var typing = typingBubble();
 
     try {
-      var res = await fetch('api/chat', {
+      var res = await fetch(App.API_BASE + 'api/chat', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ message: text, sessionId: sessionId })
@@ -122,7 +122,7 @@
   async function restoreHistory() {
     if (!sessionId) return;
     try {
-      var res = await fetch('api/chat?sessionId=' + encodeURIComponent(sessionId));
+      var res = await fetch(App.API_BASE + 'api/chat?sessionId=' + encodeURIComponent(sessionId));
       var data = await res.json();
       var messages = Array.isArray(data.messages) ? data.messages : [];
       if (!messages.length) return;

@@ -7,6 +7,21 @@ const MAX_HISTORY_TURNS = 6;    // 프롬프트에 넣는 최근 대화 개수
 const MAX_STORED_TURNS = 40;    // KV 에 보관하는 최대 대화 개수
 const SESSION_RE = /^[a-zA-Z0-9-]{8,64}$/;
 
+// Cloudflare Pages(epochwave.pages.dev, 브랜치별 프리뷰 포함)에서도 이 API를
+// 그대로 호출할 수 있게 CORS를 열어준다. 그 외 오리진은 그냥 허용하지 않는다.
+const ALLOWED_ORIGIN_RE = /^https:\/\/([a-z0-9-]+\.)?epochwave\.pages\.dev$/i;
+
+function corsHeaders(request) {
+  const origin = request.headers.get("Origin");
+  if (!origin || !ALLOWED_ORIGIN_RE.test(origin)) return {};
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "content-type",
+    "Vary": "Origin",
+  };
+}
+
 function chatKey(sessionId) { return `chat:${sessionId}`; }
 
 async function loadHistory(env, sessionId) {
@@ -94,23 +109,26 @@ function extractText(result) {
 }
 
 async function handleChatGet(request, env) {
+  const headers = { ...JSON_NC, ...corsHeaders(request) };
   const sessionId = new URL(request.url).searchParams.get("sessionId") || "";
-  if (!SESSION_RE.test(sessionId)) return new Response(JSON.stringify({ messages: [] }), { headers: JSON_NC });
+  if (!SESSION_RE.test(sessionId)) return new Response(JSON.stringify({ messages: [] }), { headers });
   const messages = await loadHistory(env, sessionId);
-  return new Response(JSON.stringify({ messages }), { headers: JSON_NC });
+  return new Response(JSON.stringify({ messages }), { headers });
 }
 
 async function handleChatPost(request, env) {
+  const headers = { ...JSON_NC, ...corsHeaders(request) };
+
   let body;
-  try { body = await request.json(); } catch { return new Response('{"error":"invalid json"}', { status: 400, headers: JSON_NC }); }
+  try { body = await request.json(); } catch { return new Response('{"error":"invalid json"}', { status: 400, headers }); }
 
   const message = (body && body.message || "").toString().slice(0, 800).trim();
-  if (!message) return new Response('{"error":"empty message"}', { status: 400, headers: JSON_NC });
+  if (!message) return new Response('{"error":"empty message"}', { status: 400, headers });
 
   const sessionId = typeof body.sessionId === "string" && SESSION_RE.test(body.sessionId) ? body.sessionId : null;
 
   const rawData = await env.HTML_KV.get("data:events");
-  if (!rawData) return new Response('{"error":"no data"}', { status: 503, headers: JSON_NC });
+  if (!rawData) return new Response('{"error":"no data"}', { status: 503, headers });
   const data = JSON.parse(rawData);
 
   // KV 에 저장된 대화가 있으면 그걸 근거로, 없으면(세션 없는 요청 등) 클라이언트가 보낸 history 로 대체
@@ -134,7 +152,7 @@ async function handleChatPost(request, env) {
     try {
       result = await env.AI.run(CHAT_MODEL, { messages, max_tokens: 2048 });
     } catch (err) {
-      if (attempt === 1) return new Response(JSON.stringify({ error: "ai_error", detail: String(err) }), { status: 502, headers: JSON_NC });
+      if (attempt === 1) return new Response(JSON.stringify({ error: "ai_error", detail: String(err) }), { status: 502, headers });
       continue;
     }
     raw = extractText(result);
@@ -161,7 +179,7 @@ async function handleChatPost(request, env) {
     ]);
   }
 
-  return new Response(JSON.stringify({ reply, refs }), { headers: JSON_NC });
+  return new Response(JSON.stringify({ reply, refs }), { headers });
 }
 
 async function handleChat(request, env) {
@@ -174,10 +192,16 @@ export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
 
+    // Cloudflare Pages(다른 오리진)에서 오는 preflight
+    if (request.method === "OPTIONS" && (pathname === "/api/history" || pathname === "/api/chat")) {
+      return new Response(null, { status: 204, headers: corsHeaders(request) });
+    }
+
     if (pathname === "/api/history") {
+      const headers = { ...JSON_H, ...corsHeaders(request) };
       const data = await env.HTML_KV.get("data:events");
-      if (!data) return new Response('{"error":"no data"}', { status: 404, headers: JSON_H });
-      return new Response(data, { headers: JSON_H });
+      if (!data) return new Response('{"error":"no data"}', { status: 404, headers });
+      return new Response(data, { headers });
     }
 
     if (pathname === "/api/chat") {

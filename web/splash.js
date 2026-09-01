@@ -4,7 +4,10 @@ var App = {
   nodes: [],
   eraMap: {},
   open: null,
-  reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  /* API는 항상 이 Worker에서 서빙한다 — 이 페이지 자체가 workers.dev에서 열렸으면
+     상대경로와 결과가 같고, Cloudflare Pages 같은 다른 오리진에서 열렸어도 그대로 동작한다. */
+  API_BASE: 'https://ndk.hello-world-history.workers.dev/'
 };
 
 /* ══════════ 스플래시: 로딩 + 진입 ══════════ */
@@ -70,7 +73,7 @@ var App = {
     })(t0);
   }
 
-  fetch('api/history', { cache: 'no-cache' })
+  fetch(App.API_BASE + 'api/history', { cache: 'no-cache' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
