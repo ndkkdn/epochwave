@@ -1,0 +1,559 @@
+/* ═══ 토큰 ═══ */
+:root{
+  --bg:#080B14; --bg2:#0E1424; --ink:#EAF0FF; --dim:#8A97B8; --faint:#4B5878;
+  --line:rgba(140,165,220,.16); --panel:rgba(16,22,40,.94);
+  --amber:#FFB03A; --magenta:#FF3D8B; --cyan:#4DE2F0;
+  --korea:#FF6B4A; --world:#4DA3FF;
+  --stage-min:430px;
+  --fx:cubic-bezier(.22,.61,.36,1);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased; overflow:hidden;
+}
+[hidden]{display:none!important}
+kbd{font:inherit;font-size:.85em;border:1px solid var(--line);border-radius:4px;padding:1px 5px;background:rgba(255,255,255,.05)}
+
+/* ═══ 스플래시 ═══ */
+#splash{
+  position:fixed; inset:0; z-index:100; overflow:hidden;
+  display:grid; place-items:center; text-align:center;
+  /* 하단을 어두운 톤으로 — 밝은 마젠타·바이올렛을 깊은 자정색으로 낮췄다 */
+  background:
+    radial-gradient(120% 80% at 50% 118%, #4A2010 0%, #4A0E28 24%, #240C2C 46%, #0E0A1E 70%, var(--bg) 100%);
+}
+.sun{
+  position:absolute; left:50%; bottom:26%; width:min(56vw,520px); aspect-ratio:1;
+  transform:translateX(-50%); border-radius:50%;
+  background:linear-gradient(180deg,#C9A63E 0%,#B0662A 46%,#8A2148 100%);
+  filter:blur(.4px); opacity:.38;
+  -webkit-mask-image:repeating-linear-gradient(180deg,#000 0 12px,transparent 12px 18px);
+  mask-image:repeating-linear-gradient(180deg,#000 0 12px,transparent 12px 18px);
+}
+.grid-floor{
+  position:absolute; left:-50%; right:-50%; bottom:0; height:46%;
+  background-image:
+    repeating-linear-gradient(90deg,transparent 0 78px,rgba(150,70,120,.2) 78px 80px),
+    repeating-linear-gradient(0deg,transparent 0 46px,rgba(150,70,120,.14) 46px 48px);
+  transform:perspective(340px) rotateX(72deg); transform-origin:bottom center;
+  /* 원근 때문에 가로선이 화면 맨 아래에 뭉쳐 밝은 띠로 보인다 —
+     아래쪽도 함께 죽여서 수평선처럼 은은하게만 남긴다. */
+  -webkit-mask-image:linear-gradient(0deg,transparent 0%,#000 34%,transparent 96%);
+  mask-image:linear-gradient(0deg,transparent 0%,#000 34%,transparent 96%);
+}
+
+/* ═══ 진입 연출 — 빛이 중심으로 빨려들어가며 워프 ═══ */
+.warp{
+  position:absolute; inset:0; z-index:5; pointer-events:none; opacity:0;
+  /* 중심으로 수렴하는 광선 다발 */
+  background:
+    repeating-conic-gradient(from 0deg at 50% 50%,
+      transparent 0deg 2.4deg, rgba(255,225,160,.55) 2.4deg 3deg,
+      transparent 3deg 5.6deg, rgba(120,210,255,.4) 5.6deg 6deg);
+  -webkit-mask-image:radial-gradient(circle at 50% 50%, transparent 4%, #000 22%, #000 55%, transparent 78%);
+  mask-image:radial-gradient(circle at 50% 50%, transparent 4%, #000 22%, #000 55%, transparent 78%);
+}
+.warp-core{
+  position:absolute; left:50%; top:50%; z-index:6; pointer-events:none;
+  width:18px; height:18px; margin:-9px 0 0 -9px; border-radius:50%;
+  background:#fff; opacity:0;
+  box-shadow:0 0 26px 10px rgba(255,236,190,.9), 0 0 70px 26px rgba(120,200,255,.55);
+}
+
+#splash.leaving{ animation:splashCollapse .95s cubic-bezier(.6,.02,.86,.1) forwards }
+#splash.leaving .splash-inner{ animation:suckIn .62s cubic-bezier(.66,0,.9,.24) forwards }
+#splash.leaving .sun,
+#splash.leaving .grid-floor{ animation:suckInBg .62s cubic-bezier(.66,0,.9,.24) forwards }
+#splash.leaving .warp{ animation:warpStreak .95s ease-in forwards }
+#splash.leaving .warp-core{ animation:coreFlash .95s ease-in forwards }
+
+/* 화면 전체가 중심점으로 수축하며 사라진다 — 원형 아이리스로 닫히다가
+   마지막엔 확 하얗게 터지는 대신 소실점(점 하나)으로 조용히 꺼진다 */
+@keyframes splashCollapse{
+  0%   { clip-path:circle(75% at 50% 50%); transform:scale(1);    filter:brightness(1)   saturate(1);   opacity:1 }
+  58%  { clip-path:circle(36% at 50% 50%); transform:scale(.38);  filter:brightness(1.3) saturate(1.4); opacity:1 }
+  82%  { clip-path:circle(7%  at 50% 50%); transform:scale(.05);  filter:brightness(1.6) saturate(1.6); opacity:1 }
+  100% { clip-path:circle(0%  at 50% 50%); transform:scale(0);    filter:brightness(1)   saturate(1);   opacity:0; visibility:hidden }
+}
+/* 로고·회로·버튼이 먼저 중심으로 빨려들어간다 */
+@keyframes suckIn{
+  0%   { transform:scale(1)   translateZ(0); opacity:1; filter:blur(0) }
+  100% { transform:scale(.12); opacity:0; filter:blur(6px) }
+}
+@keyframes suckInBg{
+  0%   { opacity:.38 }
+  100% { opacity:0; transform:translateX(-50%) scale(.15) }
+}
+/* 광선이 회전하며 중심으로 수렴 */
+@keyframes warpStreak{
+  0%   { opacity:0; transform:scale(2.4)  rotate(0deg) }
+  30%  { opacity:.85; }
+  100% { opacity:0; transform:scale(.05) rotate(190deg) }
+}
+/* 중심에서 잠깐 밝아졌다가, 바깥으로 터지지 않고 점 하나로 수축하며 소실점으로 꺼진다 */
+@keyframes coreFlash{
+  0%,42% { opacity:0; transform:scale(.15) }
+  64%    { opacity:1; transform:scale(1.15) }
+  85%    { opacity:1; transform:scale(.4)  }
+  100%   { opacity:0; transform:scale(.04) }
+}
+.splash-inner{position:relative; z-index:2; padding:24px; max-width:min(92vw,760px)}
+.kicker{
+  font-family:Orbitron,sans-serif; font-weight:500; letter-spacing:.42em;
+  font-size:11px; color:rgba(255,255,255,.6); margin:0 0 14px;
+}
+.wordmark{margin:0; line-height:.9; font-family:Orbitron,sans-serif; font-weight:900; font-style:italic}
+.wordmark span{display:block; text-transform:uppercase}
+.w1{font-size:clamp(24px,5.2vw,50px); letter-spacing:.02em;
+  background:linear-gradient(180deg,#FFF6D8,#FFC94A 55%,#F07A1E);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 3px 0 rgba(120,20,0,.5));}
+.w2{font-size:clamp(38px,9.2vw,92px); letter-spacing:-.005em; margin-top:2px;
+  background:linear-gradient(180deg,#FFF6D8,#FFB43A 48%,#E8571C);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 4px 0 rgba(120,20,0,.55));}
+.subtitle{margin:20px auto 26px; max-width:44ch; font-size:14.5px; line-height:1.75; color:rgba(255,255,255,.86)}
+.subtitle b{color:#FFD98A; font-weight:700}
+
+.circuits{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:22px}
+.circuit{
+  background:rgba(6,8,18,.72); border:1px solid rgba(255,255,255,.14);
+  border-radius:8px; padding:9px 16px 10px; min-width:170px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 8px 24px rgba(0,0,0,.4);
+}
+.circuit .lbl{display:block; font-family:Orbitron,sans-serif; font-size:8.5px; letter-spacing:.2em; color:rgba(255,255,255,.5); margin-bottom:5px}
+.circuit .led{font-family:Orbitron,sans-serif; font-weight:700; font-size:27px; letter-spacing:.08em; display:block}
+.dest .led{color:#FF5C3A; text-shadow:0 0 14px rgba(255,92,58,.75)}
+.pres .led{color:#4DE28C; text-shadow:0 0 14px rgba(77,226,140,.7)}
+
+.gauge{display:flex; align-items:center; gap:12px; justify-content:center; margin-bottom:24px}
+.gauge-bar{width:min(58vw,300px); height:7px; border-radius:99px; background:rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.18); overflow:hidden;
+  transition:box-shadow .2s}
+.gauge-bar i{display:block; height:100%; width:0; border-radius:99px;
+  background:linear-gradient(90deg,#4DE2F0,#FFD54A 62%,#FF3D3D)}
+
+/* 버튼을 누른 뒤 충전되는 동안 — 게이지·회로가 함께 요동친다 */
+#splash.charging .gauge-bar{ box-shadow:0 0 18px 2px rgba(255,196,74,.55), inset 0 0 8px rgba(255,255,255,.25) }
+#splash.charging .circuit{ animation:circuitShake .12s linear infinite }
+#splash.charging .dest .led,
+#splash.charging .pres .led{ animation:ledFlicker .16s steps(2) infinite }
+#splash.charging .enter{ pointer-events:none; filter:saturate(1.3) }
+@keyframes circuitShake{
+  0%,100%{ transform:translate(0,0) } 25%{ transform:translate(.6px,-.6px) }
+  50%{ transform:translate(-.6px,.6px) } 75%{ transform:translate(.6px,.6px) }
+}
+@keyframes ledFlicker{ 0%,100%{ opacity:1 } 50%{ opacity:.45 } }
+
+/* 만충 — 짧게 확 밝아졌다가 워프로 넘어간다 */
+#splash.charged .gauge-bar{ box-shadow:0 0 30px 8px rgba(255,224,140,.9) }
+#splash.charged .gauge-txt{ color:#FFE9A8; text-shadow:0 0 12px rgba(255,220,120,.85) }
+#splash.charged .splash-inner{ animation:chargeFlash .26s ease-out }
+@keyframes chargeFlash{
+  0%{ filter:brightness(1) } 40%{ filter:brightness(1.9) } 100%{ filter:brightness(1.25) }
+}
+.gauge-txt{font-family:Orbitron,sans-serif; font-size:10px; letter-spacing:.14em; color:rgba(255,255,255,.72); min-width:132px; text-align:left}
+
+.enter{
+  display:inline-flex; align-items:baseline; gap:8px; cursor:pointer;
+  font-family:Orbitron,sans-serif; padding:13px 26px; border-radius:99px;
+  color:#2A1200; border:none;
+  background:linear-gradient(180deg,#FFE07A,#FFA92E 55%,#F2711C);
+  box-shadow:0 6px 0 #A63F06, 0 14px 30px rgba(255,120,20,.4);
+  transition:transform .12s var(--fx), box-shadow .12s var(--fx), opacity .2s;
+}
+.enter[disabled]{opacity:.35; cursor:not-allowed; filter:saturate(.4)}
+.enter:not([disabled]):hover{transform:translateY(-2px); box-shadow:0 8px 0 #A63F06, 0 18px 38px rgba(255,120,20,.5)}
+.enter:not([disabled]):active{transform:translateY(3px); box-shadow:0 3px 0 #A63F06}
+.enter .mph{font-weight:900; font-size:23px; font-style:italic}
+.enter .unit{font-weight:700; font-size:11px; letter-spacing:.1em}
+.enter .cta{font-family:"Noto Sans KR",sans-serif; font-weight:700; font-size:13.5px; margin-left:6px}
+.hint{margin:14px 0 0; font-size:11.5px; letter-spacing:.06em; color:rgba(255,255,255,.55); min-height:17px}
+
+/* ═══ 본편 셸 ═══ */
+#app{position:fixed; inset:0; display:flex; flex-direction:column;
+  background:radial-gradient(140% 100% at 50% 0%, #131B33 0%, var(--bg) 62%)}
+/* 워프의 반대편에서 튀어나오듯 — 아주 작게 눌린 상태에서 제자리로 펴진다.
+   fill 을 두지 않는다: 마지막 키프레임이 곧 자연 상태이므로, 애니메이션이
+   (탭 전환 등으로) 끝까지 재생되지 않아도 화면이 투명하게 멈추지 않는다. */
+#app.enter-anim{animation:appIn .78s cubic-bezier(.16,.84,.28,1)}
+@keyframes appIn{
+  0%   { opacity:0; transform:scale(.82); filter:brightness(2.6) blur(7px) }
+  38%  { opacity:1; filter:brightness(1.4) blur(1px) }
+  100% { opacity:1; transform:none; filter:none }
+}
+
+.hud{
+  flex:0 0 auto; display:flex; align-items:center; gap:18px; padding:11px 18px;
+  border-bottom:1px solid var(--line); background:rgba(8,11,20,.72); backdrop-filter:blur(8px); z-index:5;
+}
+.hud-mark{display:block; font-family:Orbitron,sans-serif; font-weight:900; font-style:italic; font-size:14px; letter-spacing:.01em;
+  background:linear-gradient(180deg,#FFE7A8,#FFA22E); -webkit-background-clip:text; background-clip:text; color:transparent}
+.hud-mark b{color:transparent}
+.hud-sub{display:block; font-size:10.5px; color:var(--dim); letter-spacing:.06em; margin-top:2px}
+.eras{flex:1; display:flex; gap:6px; justify-content:center; overflow-x:auto; scrollbar-width:none}
+.eras::-webkit-scrollbar{display:none}
+.era-btn{
+  flex:0 0 auto; cursor:pointer; font:inherit; font-size:11.5px; white-space:nowrap;
+  padding:5px 11px; border-radius:99px; color:var(--dim);
+  background:transparent; border:1px solid var(--line);
+  transition:color .16s, border-color .16s, background .16s;
+}
+.era-btn:hover{color:var(--ink); border-color:color-mix(in srgb, var(--c) 60%, transparent); background:color-mix(in srgb, var(--c) 12%, transparent)}
+.era-btn i{display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--c); margin-right:6px; vertical-align:1px}
+.hud-r{display:flex; gap:12px; align-items:center}
+.legend{font-size:11px; color:var(--dim); display:inline-flex; align-items:center; gap:5px}
+.sw{width:9px; height:9px; border-radius:50%; display:inline-block}
+.sw.world{background:var(--world)} .sw.korea{background:var(--korea)}
+
+/* ═══ 주가 곡선 ═══ */
+.mkt-area{opacity:.09}
+.mkt-line{stroke-width:1.6; stroke-linejoin:round; opacity:.72}
+.mkt-dim{opacity:.3}          /* 선택 구간 밖 — 추세만 희미하게 남긴다 */
+.mkt-name{font-family:Orbitron,sans-serif; font-size:9.5px; letter-spacing:.16em; opacity:.65}
+.mkt-hit{cursor:pointer}
+
+/* 지점 표시 — 점 자체의 밝은 테두리로 선·면적과 구분한다.
+   헤일로는 불투명 배경색으로 채우면 그 자리의 라인을 끊어 보이게 만들어서
+   기본 상태에서는 완전히 비워 두고, 강조 상태에서만 얇은 링으로만 잠깐 보여준다. */
+.mkt-halo{fill:none; stroke:none; opacity:0; transition:r .15s, opacity .15s}
+.mkt-dot{
+  opacity:1; stroke:var(--ink); stroke-width:1.4px; paint-order:stroke;
+  filter:drop-shadow(0 0 3px currentColor);
+  transition:r .15s, opacity .15s;
+}
+.mkt-dot.is-hover{r:4.6px; filter:drop-shadow(0 0 7px currentColor)}
+.mkt-dot.is-active{r:5.6px; stroke-width:1.8px; filter:drop-shadow(0 0 10px currentColor)}
+.mkt-halo.is-hover{opacity:1; r:6.6px; stroke:var(--ink); stroke-width:1}
+.mkt-halo.is-active{opacity:1; r:8px; stroke:var(--ink); stroke-width:1.4}
+#app.no-mkt #marketLayer{display:none}
+#app.has-open #marketLayer{opacity:.35; transition:opacity .3s}
+
+/* 주가 툴팁 */
+#quote{
+  position:absolute; left:var(--qx); top:var(--qy); transform:translate(-50%,-100%);
+  display:flex; align-items:baseline; gap:8px; white-space:nowrap; pointer-events:none;
+  padding:6px 11px; border-radius:8px; z-index:4;
+  background:rgba(10,14,26,.96); border:1px solid var(--line);
+  box-shadow:0 8px 24px rgba(0,0,0,.6);
+}
+#quote[data-side="below"]{transform:translate(-50%,0)}
+.q-mkt{font-family:Orbitron,sans-serif; font-size:9px; letter-spacing:.14em}
+.q-yr{font-family:Orbitron,sans-serif; font-size:10px; color:var(--faint)}
+.q-val{font-family:Orbitron,sans-serif; font-size:13px; font-weight:700; color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.q-chg{font-size:10.5px; font-variant-numeric:tabular-nums}
+.q-chg.up{color:#48D18A} .q-chg.dn{color:#FF6B6B}
+
+/* HUD 주가 토글 */
+.mkt-btn{
+  font:inherit; font-size:11px; cursor:pointer; white-space:nowrap;
+  display:inline-flex; align-items:center; gap:6px;
+  color:var(--faint); background:transparent;
+  border:1px solid var(--line); border-radius:99px; padding:4px 11px;
+  transition:color .15s, border-color .15s;
+}
+.mkt-btn i{width:13px; height:2px; border-radius:99px; background:currentColor; display:inline-block}
+.mkt-btn.is-on{color:var(--ink); border-color:rgba(140,165,220,.4)}
+.mkt-btn.is-on i{background:linear-gradient(90deg,var(--korea),var(--world))}
+
+/* ═══ 기간 선택 바 ═══ */
+.period-bar{
+  flex:0 0 auto; display:flex; align-items:center; gap:14px; padding:8px 18px;
+  border-bottom:1px solid var(--line); background:rgba(8,11,20,.5);
+  cursor:ns-resize;
+}
+.period-bar :is(button,input){cursor:auto}
+.period-lbl{font-size:11px; letter-spacing:.1em; color:var(--dim); white-space:nowrap}
+.range-wrap{position:relative; flex:1; max-width:420px; height:20px}
+.range-track{position:absolute; top:50%; left:0; right:0; height:4px; margin-top:-2px;
+  border-radius:99px; background:rgba(140,165,220,.18)}
+.range-fill{position:absolute; top:50%; height:4px; margin-top:-2px; border-radius:99px;
+  background:linear-gradient(90deg, var(--korea), var(--world)); pointer-events:none}
+.range-input{
+  position:absolute; inset:0; width:100%; margin:0; background:none;
+  -webkit-appearance:none; appearance:none; pointer-events:none;
+}
+.range-input::-webkit-slider-runnable-track{background:none}
+.range-input::-moz-range-track{background:none}
+.range-input::-webkit-slider-thumb{
+  -webkit-appearance:none; pointer-events:auto; cursor:grab;
+  width:16px; height:16px; border-radius:50%; margin-top:-6px;
+  background:#0C1120; border:2px solid var(--amber);
+  box-shadow:0 0 0 4px rgba(255,176,58,.16), 0 2px 6px rgba(0,0,0,.5);
+}
+.range-input::-moz-range-thumb{
+  pointer-events:auto; cursor:grab; width:14px; height:14px; border-radius:50%; border:2px solid var(--amber);
+  background:#0C1120; box-shadow:0 0 0 4px rgba(255,176,58,.16);
+}
+.range-input:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(255,176,58,.4)}
+.period-val{font-family:Orbitron,sans-serif; font-size:11.5px; letter-spacing:.06em; color:var(--ink); white-space:nowrap}
+.period-count{font-size:11px; color:var(--faint); white-space:nowrap}
+.period-reset{
+  font:inherit; font-size:11px; cursor:pointer; white-space:nowrap; letter-spacing:.02em;
+  color:var(--dim); background:transparent; border:1px solid var(--line); border-radius:99px;
+  padding:4px 12px; transition:color .15s, border-color .15s;
+}
+.period-reset:hover{color:var(--ink); border-color:rgba(140,165,220,.4)}
+
+/* 기간 밖으로 밀려난 요소들 */
+.node.is-hidden{display:none}
+.stem.is-hidden{display:none}
+.era-band.is-dim,.era-name.is-dim,.era-name-ko.is-dim{opacity:.16; transition:opacity .2s}
+.tick.is-dim,.yr.is-dim{opacity:.22; transition:opacity .2s}
+
+@media (max-width:820px){
+  .period-bar{padding:8px 12px; gap:10px}
+  .period-lbl{display:none}
+  .range-wrap{max-width:none}
+}
+
+/* ═══ 스크롤 무대 ═══ */
+#scroller{flex:1; overflow:auto; position:relative; outline:none;
+  scrollbar-color:rgba(140,165,220,.34) transparent}
+#scroller::-webkit-scrollbar{height:9px; width:9px}
+#scroller::-webkit-scrollbar-thumb{background:rgba(140,165,220,.3); border-radius:99px}
+/* 무대는 스크롤 영역 높이를 그대로 채운다 — 노드가 화면 밖으로 잘리지 않도록 */
+#stage{position:relative; height:100%; min-height:var(--stage-min)}
+#wires{position:absolute; inset:0; width:100%; height:100%; overflow:visible}
+#nodes,#cards{position:absolute; inset:0}
+/* #nodes 는 노드 버튼들을 담는 빈 오버레이라, 빈 영역은 그대로 두면 밑에 깔린
+   #wires 의 주가 곡선 히트서클로 클릭이 전달되지 않는다 — 빈 곳만 통과시킨다. */
+#nodes{pointer-events:none}
+.node{pointer-events:auto}
+#cards{pointer-events:none}
+
+/* 트랙·눈금 */
+.era-band{opacity:.16}
+.era-name{font-family:Orbitron,sans-serif; font-size:10px; letter-spacing:.22em; text-transform:uppercase; opacity:.5}
+.era-name-ko{font-size:11px; letter-spacing:.1em; opacity:.62}
+.rail{stroke:rgba(150,180,240,.3); stroke-width:1.4}
+.rail-glow{stroke:rgba(120,180,255,.1); stroke-width:9; stroke-linecap:round}
+.tick{stroke:rgba(150,180,240,.2); stroke-width:1}
+.tick.major{stroke:rgba(160,195,255,.42); stroke-width:1.3}
+.yr{font-family:Orbitron,sans-serif; font-size:10.5px; fill:var(--faint); letter-spacing:.08em}
+.yr.major{fill:#9FB2DA}
+.stem{stroke-width:1.4; opacity:.5}
+.edge{fill:none; stroke-width:2.2; stroke-linecap:round;
+  filter:drop-shadow(0 0 5px currentColor)}
+.edge-cap{stroke:none}
+
+/* 종점 마커 */
+.terminus{font-family:Orbitron,sans-serif; font-size:11px; letter-spacing:.2em; fill:var(--amber)}
+
+/* ═══ 노드 ═══ */
+.node{
+  position:absolute; left:var(--x); top:var(--y); transform:translate(-50%,-50%);
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  background:none; border:none; padding:0; cursor:pointer; font:inherit; color:inherit;
+  -webkit-tap-highlight-color:transparent;
+}
+.node .dot{
+  width:46px; height:46px; border-radius:50%; display:grid; place-items:center;
+  background:radial-gradient(circle at 34% 30%, #1D2740, #0C1120 72%);
+  border:1.6px solid var(--c); color:var(--c);
+  box-shadow:0 0 0 5px color-mix(in srgb, var(--c) 9%, transparent), 0 6px 18px rgba(0,0,0,.55);
+  transition:transform .2s var(--fx), box-shadow .2s var(--fx), background .2s;
+}
+.node .dot svg{width:23px; height:23px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round}
+.node .lbl{
+  font-family:Orbitron,sans-serif; font-size:10px; letter-spacing:.06em; color:var(--dim);
+  white-space:nowrap; transition:color .2s;
+}
+.node .nm{
+  font-size:11.5px; font-weight:500; color:var(--faint); white-space:nowrap;
+  max-width:150px; overflow:hidden; text-overflow:ellipsis; transition:color .2s;
+}
+.node:hover .dot,.node:focus-visible .dot{transform:scale(1.12); box-shadow:0 0 0 8px color-mix(in srgb, var(--c) 15%, transparent), 0 0 26px color-mix(in srgb, var(--c) 45%, transparent)}
+.node:hover .lbl,.node:hover .nm,.node:focus-visible .lbl,.node:focus-visible .nm{color:var(--ink)}
+.node:focus-visible{outline:none}
+.node[data-track="world"]{flex-direction:column-reverse}
+.node.is-open .dot{transform:scale(1.16); background:radial-gradient(circle at 34% 30%, color-mix(in srgb, var(--c) 34%, #101828), #0C1120 74%);
+  box-shadow:0 0 0 9px color-mix(in srgb, var(--c) 18%, transparent), 0 0 34px color-mix(in srgb, var(--c) 55%, transparent)}
+.node.is-open .lbl,.node.is-open .nm{color:var(--ink)}
+#app.has-open .node:not(.is-open){opacity:.42; transition:opacity .3s}
+
+/* ═══ 카드 ═══ */
+.card{
+  position:absolute; left:var(--cx); top:var(--cy); width:var(--cw);
+  max-height:var(--cmh); display:flex; flex-direction:column;
+  pointer-events:auto; overflow:hidden;
+  background:linear-gradient(168deg, color-mix(in srgb, var(--c) 13%, var(--panel)), var(--panel) 46%);
+  border:1px solid color-mix(in srgb, var(--c) 42%, transparent); border-radius:16px;
+  box-shadow:0 24px 60px rgba(0,0,0,.62), 0 0 0 1px rgba(255,255,255,.03) inset,
+             0 0 40px color-mix(in srgb, var(--c) 18%, transparent);
+  will-change:clip-path;
+}
+.card-head{flex:0 0 auto; padding:16px 18px 13px; border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--c) 16%, transparent), transparent)}
+.card-when{display:flex; align-items:center; gap:8px; margin-bottom:7px}
+.card-when .ym{font-family:Orbitron,sans-serif; font-weight:700; font-size:12.5px; letter-spacing:.09em; color:var(--c)}
+.card-when .era{font-size:10px; letter-spacing:.1em; color:var(--faint); padding:2px 8px; border:1px solid var(--line); border-radius:99px}
+.card-title{margin:0; font-size:18.5px; font-weight:700; line-height:1.35; letter-spacing:-.01em}
+.card-note{margin:8px 0 0; font-size:11.5px; color:var(--amber); letter-spacing:.02em}
+.card-note::before{content:"⚡ "}
+.card-note.mkt-chg-note{font-family:Orbitron,sans-serif; font-size:13px; font-weight:700;
+  font-variant-numeric:tabular-nums; letter-spacing:.03em}
+.card-note.mkt-chg-note::before{content:none}
+.card-note.mkt-chg-note.up{color:#48D18A}
+.card-note.mkt-chg-note.dn{color:#FF6B6B}
+
+.card-body{flex:1 1 auto; min-height:0; overflow-y:auto; padding:6px 18px 16px;
+  scrollbar-width:thin; scrollbar-color:rgba(140,165,220,.3) transparent}
+.card-body::-webkit-scrollbar{width:6px}
+.card-body::-webkit-scrollbar-thumb{background:rgba(140,165,220,.3); border-radius:99px}
+.side{padding:13px 0 12px; border-bottom:1px dashed var(--line)}
+.side:last-child{border-bottom:none; padding-bottom:2px}
+.side-top{display:flex; align-items:center; gap:8px; margin-bottom:7px}
+.side-tag{font-size:9.5px; font-weight:700; letter-spacing:.14em; padding:3px 8px; border-radius:5px}
+.side.world .side-tag{color:var(--world); background:color-mix(in srgb, var(--world) 16%, transparent)}
+.side.korea .side-tag{color:var(--korea); background:color-mix(in srgb, var(--korea) 16%, transparent)}
+.side-head{font-size:13.5px; font-weight:700; line-height:1.4}
+.side-body{margin:0; font-size:12.8px; line-height:1.72; color:#C3CEE8}
+.figs{display:flex; flex-wrap:wrap; gap:5px; margin-top:9px}
+.fig{font-size:10.5px; color:var(--dim); padding:2.5px 8px; border-radius:99px;
+  border:1px solid var(--line); background:rgba(255,255,255,.03)}
+.fig::before{content:"◆"; font-size:6px; vertical-align:2px; margin-right:5px; opacity:.55}
+
+/* 주가 팝업 안의 경제사 각주 — 급등락의 배경, 클릭 불필요 */
+.side.mkt-econ .side-tag{font-weight:700; letter-spacing:.1em}
+
+/* 주가 팝업 안의 "관련 사건" 항목 — 클릭하면 그 사건 카드로 이동 */
+.side.mkt-rel{cursor:pointer; margin:0 -18px; padding:13px 18px 12px; transition:background .15s}
+.side.mkt-rel:hover{background:rgba(255,255,255,.035)}
+.side.mkt-rel:hover .side-head{color:var(--ink)}
+.fig.mkt-jump{color:var(--cyan); border-color:rgba(77,226,240,.35); background:rgba(77,226,240,.08)}
+.fig.mkt-jump::before{content:none}
+.mkt-empty{margin:10px 0 2px; font-size:12.5px; color:var(--dim)}
+
+/* 콘텐츠 스태거 */
+.card .stagger{opacity:0; transform:translateY(7px)}
+.card.revealing .stagger{animation:rise .42s var(--fx) forwards}
+@keyframes rise{to{opacity:1; transform:none}}
+
+/* ═══ 푸터 ═══ */
+.foot{flex:0 0 auto; display:flex; justify-content:space-between; align-items:center;
+  padding:8px 18px; border-top:1px solid var(--line); font-size:11px; color:var(--faint);
+  background:rgba(8,11,20,.6)}
+.foot-scroll{font-family:Orbitron,sans-serif; letter-spacing:.14em; font-size:10px}
+
+/* ═══ 반응형 ═══ */
+/* ═══ 챗봇이 짚어주는 하이라이트 ═══ */
+.node.is-chat-highlight .dot{ animation:chatNodePulse 1.3s ease-in-out infinite }
+@keyframes chatNodePulse{
+  0%,100%{ box-shadow:0 0 0 5px color-mix(in srgb, var(--c) 12%, transparent), 0 0 16px color-mix(in srgb, var(--c) 45%, transparent) }
+  50%{ box-shadow:0 0 0 13px color-mix(in srgb, var(--c) 25%, transparent), 0 0 30px color-mix(in srgb, var(--c) 75%, transparent) }
+}
+.mkt-dot.is-chat-highlight{ animation:chatDotPulse 1.3s ease-in-out infinite }
+@keyframes chatDotPulse{
+  0%,100%{ filter:drop-shadow(0 0 3px currentColor) }
+  50%{ filter:drop-shadow(0 0 14px currentColor) }
+}
+.mkt-halo.is-chat-highlight{ opacity:1; r:8px; fill:none; stroke:var(--amber); stroke-width:2px }
+
+/* ═══ AI 가이드 챗봇 ═══ */
+.chat-toggle{
+  position:fixed; right:20px; bottom:20px; z-index:40; cursor:pointer;
+  display:flex; align-items:center; gap:8px; font:inherit; font-size:13px; font-weight:600;
+  color:#2A1200; border:none; padding:11px 18px 11px 14px; border-radius:99px;
+  background:linear-gradient(180deg,#FFE07A,#FFA92E 55%,#F2711C);
+  box-shadow:0 6px 0 #A63F06, 0 10px 26px rgba(255,120,20,.4);
+  transition:transform .12s var(--fx), box-shadow .12s var(--fx);
+}
+.chat-toggle svg{width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linejoin:round}
+.chat-toggle:hover{transform:translateY(-2px); box-shadow:0 8px 0 #A63F06, 0 14px 32px rgba(255,120,20,.5)}
+.chat-toggle:active{transform:translateY(2px); box-shadow:0 3px 0 #A63F06}
+.chat-toggle[aria-expanded="true"]{visibility:hidden; pointer-events:none}
+
+.chat-panel{
+  position:fixed; right:20px; bottom:20px; z-index:41;
+  width:min(370px, calc(100vw - 40px)); height:min(560px, calc(100vh - 60px));
+  display:flex; flex-direction:column; overflow:hidden;
+  background:var(--panel); border:1px solid var(--line-2, rgba(140,165,220,.34)); border-radius:16px;
+  box-shadow:0 24px 60px rgba(0,0,0,.6);
+}
+.chat-head{
+  flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:14px 16px; border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(255,176,58,.12), transparent);
+}
+.chat-title{display:block; font-family:Orbitron,sans-serif; font-weight:700; font-size:13px; letter-spacing:.03em; color:var(--ink)}
+.chat-sub{display:block; font-size:10.5px; color:var(--dim); margin-top:2px}
+.chat-close{
+  font:inherit; font-size:20px; line-height:1; cursor:pointer; color:var(--dim);
+  background:transparent; border:none; padding:2px 6px; border-radius:6px; transition:color .15s, background .15s;
+}
+.chat-close:hover{color:var(--ink); background:rgba(255,255,255,.06)}
+
+.chat-list{flex:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:10px;
+  scrollbar-width:thin; scrollbar-color:rgba(140,165,220,.3) transparent}
+.chat-list::-webkit-scrollbar{width:6px}
+.chat-list::-webkit-scrollbar-thumb{background:rgba(140,165,220,.3); border-radius:99px}
+
+.chat-msg{display:flex}
+.chat-msg.user{justify-content:flex-end}
+.chat-bubble{
+  max-width:84%; padding:9px 13px; border-radius:14px; font-size:13px; line-height:1.6;
+  background:var(--panel-2, rgba(18,38,69,.9)); color:var(--ink); white-space:pre-wrap;
+}
+.chat-msg.user .chat-bubble{background:linear-gradient(160deg, rgba(255,176,58,.22), rgba(255,176,58,.1)); border:1px solid rgba(255,176,58,.3)}
+.chat-msg.assistant .chat-bubble{border:1px solid var(--line)}
+
+.chat-msg.is-typing .chat-bubble{display:flex; gap:4px; align-items:center; padding:12px 14px}
+.chat-msg.is-typing i{width:5px; height:5px; border-radius:50%; background:var(--dim); display:block; animation:chatTyping 1.1s ease-in-out infinite}
+.chat-msg.is-typing i:nth-child(2){animation-delay:.15s}
+.chat-msg.is-typing i:nth-child(3){animation-delay:.3s}
+@keyframes chatTyping{0%,60%,100%{opacity:.3; transform:translateY(0)} 30%{opacity:1; transform:translateY(-3px)}}
+
+.chat-suggests{display:flex; flex-wrap:wrap; gap:6px; margin-top:2px}
+.chat-suggest{
+  font:inherit; font-size:11.5px; cursor:pointer; color:var(--cyan); text-align:left;
+  background:rgba(77,226,240,.08); border:1px solid rgba(77,226,240,.25); border-radius:99px;
+  padding:5px 11px; transition:background .15s, border-color .15s;
+}
+.chat-suggest:hover{background:rgba(77,226,240,.16); border-color:rgba(77,226,240,.45)}
+
+.chat-form{flex:0 0 auto; display:flex; gap:8px; padding:12px; border-top:1px solid var(--line)}
+.chat-input{
+  flex:1; font:inherit; font-size:13px; color:var(--ink); background:rgba(255,255,255,.04);
+  border:1px solid var(--line); border-radius:99px; padding:9px 15px; outline:none;
+  transition:border-color .15s;
+}
+.chat-input:focus{border-color:rgba(255,176,58,.5)}
+.chat-input:disabled{opacity:.5}
+.chat-send{
+  flex:0 0 auto; width:36px; height:36px; border-radius:50%; font-size:16px; cursor:pointer;
+  color:#2A1200; border:none; background:linear-gradient(180deg,#FFE07A,#FFA92E 55%,#F2711C);
+  transition:transform .12s var(--fx), opacity .15s;
+}
+.chat-send:hover:not(:disabled){transform:scale(1.06)}
+.chat-send:disabled{opacity:.5; cursor:default}
+
+@media (max-width:520px){
+  .chat-toggle span{display:none}
+  .chat-toggle{padding:12px; right:14px; bottom:14px}
+  .chat-panel{right:10px; bottom:10px; width:calc(100vw - 20px); height:min(72vh, 560px)}
+}
+
+@media (max-width:820px){
+  :root{--stage-min:400px}
+  .hud{flex-wrap:wrap; gap:10px 14px; padding:10px 12px}
+  .eras{order:3; flex-basis:100%; justify-content:flex-start}
+  .hud-r{margin-left:auto}
+  .node .nm{max-width:104px; font-size:10.5px}
+  .foot-scroll{display:none}
+}
+@media (max-width:520px){
+  :root{--stage-min:380px}
+  .circuit{min-width:142px} .circuit .led{font-size:22px}
+  .node .nm{display:none}
+  .node .dot{width:40px;height:40px} .node .dot svg{width:20px;height:20px}
+}
+
+/* ═══ 저모션 ═══ */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important}
+  .grid-floor{display:none}
+}

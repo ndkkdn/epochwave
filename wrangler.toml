@@ -1,0 +1,11 @@
+name = "ndk"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+account_id = "8b006373d2632e537012d5ffdae0fa56"
+
+[[kv_namespaces]]
+binding = "HTML_KV"
+id = "16da29a4e4de45bea07749a0dbe1ef59"
+
+[ai]
+binding = "AI"

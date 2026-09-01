@@ -1,0 +1,13 @@
+{
+  "name": "back-to-the-future-timeline",
+  "version": "1.0.0",
+  "private": true,
+  "description": "1955에서 2026까지, 한국사와 세계사를 나란히 보는 연표",
+  "scripts": {
+    "validate": "node scripts/validate.mjs",
+    "build": "node scripts/validate.mjs && node scripts/build.mjs",
+    "push": "node scripts/push-kv.mjs",
+    "release": "npm run build && npm run push",
+    "deploy": "npm run release && wrangler deploy"
+  }
+}
